@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useApp } from '../context.js';
 import { api, haptic } from '../api.js';
-import { Avatar, BellBtn, Empty, Icon, Loader, StatusPill } from '../components/ui.jsx';
+import { Avatar, BellBtn, Empty, Icon, Loader, StatusPill, ThemeBtn } from '../components/ui.jsx';
 import {
   PERIOD, addPeriod, arc, daysUntil, fmtDate, fullName, joined, money, myPosition, num, pot, progressPct, queueLine, relTime,
 } from '../utils.js';
@@ -36,7 +36,7 @@ export default function Home() {
         <Avatar img={me.photo} name={fullName(me)} size={46} />
         <span className="grow"><small>Xush kelibsiz,</small><b>{me.firstName}</b></span>
       </button>
-      <div className="phead-r"><BellBtn /></div>
+      <div className="phead-r"><ThemeBtn /><BellBtn /></div>
     </header>
   );
   if (!H) return <>{header}<Loader /></>;

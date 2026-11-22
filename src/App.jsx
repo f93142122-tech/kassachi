@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AppCtx, useApp } from './context.js';
 import { api, API, DEV_USER, haptic, inTelegram, tg } from './api.js';
 import { fullName } from './utils.js';
+import { applyTheme, getThemePref, resolvedTheme, saveThemePref } from './theme.js';
 import { Avatar, Icon, Logo } from './components/ui.jsx';
 import { SHEETS } from './components/sheets.jsx';
 import Home from './pages/Home.jsx';
@@ -33,15 +34,6 @@ function CenterScreen({ title, text, link, retry, spinner }) {
   );
 }
 
-function applyTheme() {
-  if (!inTelegram) return;
-  if (tg.colorScheme) document.documentElement.setAttribute('data-theme', tg.colorScheme);
-  try {
-    const bg = getComputedStyle(document.body).getPropertyValue('background-color');
-    tg.setHeaderColor && tg.setHeaderColor(bg);
-    tg.setBackgroundColor && tg.setBackgroundColor(bg);
-  } catch (e) { /* eski versiyalar */ }
-}
 
 export default function App() {
   const [phase, setPhase] = useState('loading'); // loading | slow | error | gate | config | register | app
@@ -52,7 +44,7 @@ export default function App() {
   useEffect(() => {
     if (inTelegram) {
       try {
-        tg.ready(); tg.expand(); tg.onEvent('themeChanged', applyTheme);
+        tg.ready(); tg.expand(); tg.onEvent('themeChanged', () => applyTheme());
         if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
       } catch (e) { /* eski versiyalar */ }
     }
@@ -99,7 +91,22 @@ function Shell({ me, setMe }) {
   const [cards, setCards] = useState(null);
   const [tick, setTick] = useState(0);
   const [wizard, setWizard] = useState(null);
+  const [theme, setThemeState] = useState(getThemePref);
+  const [resolved, setResolved] = useState(() => resolvedTheme(getThemePref()));
   const busyRef = useRef(false);
+
+  // Mavzu: tanlovni saqlash va qo'llash; "system" bo'lsa Telegram/qurilma o'zgarishini kuzatish
+  const setTheme = useCallback(pref => { saveThemePref(pref); setThemeState(pref); setResolved(resolvedTheme(pref)); }, []);
+  useEffect(() => {
+    const sync = () => { if (getThemePref() === 'system') { applyTheme('system'); setResolved(resolvedTheme('system')); } };
+    const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+    if (mq && mq.addEventListener) mq.addEventListener('change', sync);
+    if (inTelegram) tg.onEvent('themeChanged', sync);
+    return () => {
+      if (mq && mq.removeEventListener) mq.removeEventListener('change', sync);
+      if (inTelegram) tg.offEvent('themeChanged', sync);
+    };
+  }, []);
 
   const toast = useCallback((text, kind = '') => {
     const id = Math.random().toString(36).slice(2);
@@ -177,7 +184,8 @@ function Shell({ me, setMe }) {
   const ctx = useMemo(() => ({
     me, setMe, route, go, back, sheet, openSheet, closeSheet, toast, run, busy,
     summary, setSummary, groups, setGroup, dropGroup, cards, setCards, loadCards, tick, wizard, setWizard,
-  }), [me, route, go, back, sheet, openSheet, closeSheet, toast, run, busy, summary, groups, setGroup, dropGroup, cards, loadCards, tick, wizard]);
+    theme, setTheme, resolved,
+  }), [me, route, go, back, sheet, openSheet, closeSheet, toast, run, busy, summary, groups, setGroup, dropGroup, cards, loadCards, tick, wizard, theme, setTheme, resolved]);
 
   const Page = PAGES[route.name] || Home;
   const inRoom = route.name === 'chat' && !!route.id;
@@ -209,7 +217,7 @@ function Shell({ me, setMe }) {
 }
 
 function Sidebar() {
-  const { route, go, summary, me } = useApp();
+  const { route, go, summary, me, resolved, setTheme } = useApp();
   const t = TAB_OF[route.name];
   const item = (k, icn, l, c) => (
     <button key={k} className={`nav-i ${t === k ? 'on' : ''}`} onClick={() => go(k)}>
@@ -221,6 +229,9 @@ function Sidebar() {
       <div className="logo"><Logo />Kassachi</div>
       {item('home', 'home', 'Bosh ekran')}{item('cards', 'card', 'Karta')}{item('chat', 'chat', 'Chat', summary.chats)}{item('profile', 'user', 'Profil')}
       <div className="side-foot">
+        <button className="nav-i" onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')}>
+          <Icon n={resolved === 'dark' ? 'sun' : 'moon'} />{resolved === 'dark' ? 'Yorug‘ rejim' : 'Qorong‘i rejim'}
+        </button>
         <button className="btn btn-primary btn-block" onClick={() => go('create')}><Icon n="plus" s={18} /> Guruh yaratish</button>
         <button className="side-me" onClick={() => go('profile')}>
           <Avatar img={me.photo} name={fullName(me)} size={38} />

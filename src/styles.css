@@ -482,3 +482,6 @@ body.busy button[data-act],body.busy form button{pointer-events:none}
 .pill.info{background:var(--primary-soft);color:var(--primary)}
 .tg-share{display:flex;gap:8px;flex-wrap:wrap}
 .tg-share .btn{flex:1 1 160px}
+
+/* ---------- Mavzu almashganda silliq o'tish */
+body,.card,.side,.tabbar,.phead,.gcard,.composer,.room-h,.sheet{transition:background-color .25s ease,border-color .25s ease,color .25s ease}

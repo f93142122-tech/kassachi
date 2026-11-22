@@ -16,7 +16,7 @@ const LIMITS = [
 ];
 
 export default function ProfilePage() {
-  const { me, setMe, cards, loadCards, go, openSheet, run, toast } = useApp();
+  const { me, setMe, cards, loadCards, go, openSheet, run, toast, theme, setTheme } = useApp();
   const confirm = useConfirm();
   useEffect(() => { if (!cards) loadCards().catch(() => {}); }, [cards, loadCards]);
   const prim = (cards || []).find(c => c.primary);
@@ -53,6 +53,14 @@ export default function ProfilePage() {
             <Icon n="chev" s={18} />
           </button>
         </li></ul>
+      </section>
+      <section className="block"><div className="block-h"><h2>Ko‘rinish</h2></div>
+        <div className="segctl" role="radiogroup" aria-label="Mavzu">
+          {[['system', 'monitor', 'Avtomatik'], ['light', 'sun', 'Yorug‘'], ['dark', 'moon', 'Qorong‘i']].map(([v, icn, l]) => (
+            <label key={v}><input type="radio" name="theme" checked={theme === v} onChange={() => setTheme(v)} /><span><Icon n={icn} s={16} /> {l}</span></label>
+          ))}
+        </div>
+        <p className="hint" style={{ marginTop: 8 }}>“Avtomatik” Telegram yoki qurilmangiz mavzusiga moslashadi.</p>
       </section>
       <section className="block"><div className="block-h"><h2>Bildirishnomalar</h2></div>
         <p className="hint" style={{ margin: '-4px 0 10px' }}>Yoqilganlari ilovada va Telegram chatida bot orqali keladi.</p>
